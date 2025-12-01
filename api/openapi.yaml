@@ -1,0 +1,695 @@
+openapi: 3.0.0
+info:
+  title: Jira Clone Backend API
+  description: A scalable, maintainable Go backend for a Jira-like board application
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Development server
+  - url: https://api.example.com/api/v1
+    description: Production server
+
+paths:
+  /healthz:
+    get:
+      summary: Health check
+      description: Check if the service is running
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "OK"
+
+  /auth/login:
+    post:
+      summary: User login
+      description: Authenticate a user and return JWT tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid request data
+        '401':
+          description: Invalid credentials
+
+  /auth/register:
+    post:
+      summary: User registration
+      description: Register a new user and return JWT tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '200':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid request data
+
+  /auth/refresh:
+    post:
+      summary: Refresh token
+      description: Refresh access token using refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+              required:
+                - refreshToken
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid refresh token
+
+  /users:
+    get:
+      summary: Get all users
+      description: Retrieve all users (protected endpoint)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+
+  /users/{id}:
+    get:
+      summary: Get user by ID
+      description: Retrieve a specific user by ID (protected endpoint)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+        '401':
+          description: Unauthorized
+
+    put:
+      summary: Update user
+      description: Update a user's information (protected endpoint)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid request data
+        '404':
+          description: User not found
+        '401':
+          description: Unauthorized
+
+  /projects:
+    get:
+      summary: Get all projects
+      description: Retrieve all projects (protected endpoint)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Project'
+        '401':
+          description: Unauthorized
+
+    post:
+      summary: Create project
+      description: Create a new project (protected endpoint)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectRequest'
+      responses:
+        '200':
+          description: Project created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+
+  /projects/{id}:
+    get:
+      summary: Get project by ID
+      description: Retrieve a specific project by ID (protected endpoint)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Project found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '404':
+          description: Project not found
+        '401':
+          description: Unauthorized
+
+    put:
+      summary: Update project
+      description: Update a project's information (protected endpoint)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProjectRequest'
+      responses:
+        '200':
+          description: Project updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          description: Invalid request data
+        '404':
+          description: Project not found
+        '401':
+          description: Unauthorized
+
+    delete:
+      summary: Delete project
+      description: Delete a project (protected endpoint)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Project deleted successfully
+        '404':
+          description: Project not found
+        '401':
+          description: Unauthorized
+
+  /issues:
+    get:
+      summary: Get all issues
+      description: Retrieve all issues (protected endpoint)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of issues
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Issue'
+        '401':
+          description: Unauthorized
+
+    post:
+      summary: Create issue
+      description: Create a new issue (protected endpoint)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIssueRequest'
+      responses:
+        '200':
+          description: Issue created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Issue'
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+
+  /issues/{id}:
+    get:
+      summary: Get issue by ID
+      description: Retrieve a specific issue by ID (protected endpoint)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Issue found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Issue'
+        '404':
+          description: Issue not found
+        '401':
+          description: Unauthorized
+
+    put:
+      summary: Update issue
+      description: Update an issue's information (protected endpoint)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateIssueRequest'
+      responses:
+        '200':
+          description: Issue updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Issue'
+        '400':
+          description: Invalid request data
+        '404':
+          description: Issue not found
+        '401':
+          description: Unauthorized
+
+    delete:
+      summary: Delete issue
+      description: Delete an issue (protected endpoint)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Issue deleted successfully
+        '404':
+          description: Issue not found
+        '401':
+          description: Unauthorized
+
+  /ping:
+    get:
+      summary: Ping (protected)
+      description: Simple protected ping endpoint used for smoke checks. Returns {"pong": true}
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Pong response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pong:
+                    type: boolean
+                    example: true
+        '401':
+          description: Unauthorized
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: "john@example.com"
+        password:
+          type: string
+          example: "password123"
+
+    RegisterRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+      properties:
+        name:
+          type: string
+          example: "John Doe"
+        email:
+          type: string
+          format: email
+          example: "john@example.com"
+        password:
+          type: string
+          example: "password123"
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        accessToken:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        refreshToken:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        expiresIn:
+          type: integer
+          example: 900
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "user_123"
+        name:
+          type: string
+          example: "John Doe"
+        email:
+          type: string
+          format: email
+          example: "john@example.com"
+        avatarUrl:
+          type: string
+          example: "/assets/avatars/John Doe.png"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2023-01-01T00:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2023-01-01T00:00:00Z"
+        issueIds:
+          type: array
+          items:
+            type: string
+          example: ["issue_1", "issue_2"]
+
+    CreateProjectRequest:
+      type: object
+      required:
+        - name
+        - url
+        - category
+      properties:
+        name:
+          type: string
+          example: "My Project"
+        url:
+          type: string
+          format: uri
+          example: "https://example.com"
+        description:
+          type: string
+          example: "A sample project"
+        category:
+          type: string
+          enum: [Software, Marketing, Business]
+          example: "Software"
+
+    UpdateProjectRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Updated Project Name"
+        url:
+          type: string
+          format: uri
+          example: "https://updated-example.com"
+        description:
+          type: string
+          example: "Updated project description"
+        category:
+          type: string
+          enum: [Software, Marketing, Business]
+          example: "Marketing"
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "project_123"
+        name:
+          type: string
+          example: "My Project"
+        url:
+          type: string
+          format: uri
+          example: "https://example.com"
+        description:
+          type: string
+          example: "A sample project"
+        category:
+          type: string
+          enum: [Software, Marketing, Business]
+          example: "Software"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2023-01-01T00:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2023-01-01T00:00:00Z"
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/Issue'
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+
+    CreateIssueRequest:
+      type: object
+      required:
+        - priority
+        - status
+        - title
+        - type
+        - projectId
+      properties:
+        priority:
+          type: string
+          enum: [LOWEST, LOW, MEDIUM, HIGH, HIGHEST]
+          example: "MEDIUM"
+        status:
+          type: string
+          enum: [BACKLOG, SELECTED, IN_PROGRESS, DONE]
+          example: "BACKLOG"
+        title:
+          type: string
+          example: "Fix login bug"
+        description:
+          type: string
+          example: "User cannot login with valid credentials"
+        type:
+          type: string
+          enum: [BUG, STORY, TASK]
+          example: "BUG"
+        assignee:
+          type: string
+          example: "john@example.com"
+        reporter:
+          type: string
+          example: "jane@example.com"
+        projectId:
+          type: string
+          example: "project_123"
+
+    UpdateIssueRequest:
+      type: object
+      properties:
+        priority:
+          type: string
+          enum: [LOWEST, LOW, MEDIUM, HIGH, HIGHEST]
+          example: "HIGH"
+        status:
+          type: string
+          enum: [BACKLOG, SELECTED, IN_PROGRESS, DONE]
+          example: "IN_PROGRESS"
+        title:
+          type: string
+          example: "Updated issue title"
+        description:
+          type: string
+          example: "Updated issue description"
+        type:
+          type: string
+          enum: [BUG, STORY, TASK]
+          example: "STORY"
+        assignee:
+          type: string
+          example: "jane@example.com"
+        reporter:
+          type: string
+          example: "john@example.com"
+
+    Issue:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "issue_123"
+        priority:
+          type: string
+          enum: [LOWEST, LOW, MEDIUM, HIGH, HIGHEST]
+          example: "MEDIUM"
+        status:
+          type: string
+          enum: [BACKLOG, SELECTED, IN_PROGRESS, DONE]
+          example: "BACKLOG"
+        title:
+          type: string
+          example: "Fix login bug"
+        description:
+          type: string
+          example: "User cannot login with valid credentials"
+        type:
+          type: string
+          enum: [BUG, STORY, TASK]
+          example: "BUG"
+        icon:
+          type: string
+          example: "bug"
+        assignee:
+          type: string
+          example: "john@example.com"
+        reporter:
+          type: string
+          example: "jane@example.com"
+        iconUrl:
+          type: string
+          example: "/assets/icons/bug.png"
+        displayId:
+          type: string
+          example: "ISS-1"
+        projectId:
+          type: string
+          example: "project_123"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2023-01-01T00:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2023-01-01T00:00:00Z"
